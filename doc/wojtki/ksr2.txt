@@ -1,0 +1,1192 @@
+\documentclass{classrep}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\usepackage{booktabs, multirow}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{mathtools}
+
+\studycycle{Informatyka, studia STACJONARNE, I st.}
+\coursesemester{VI}
+
+\coursename{Komputerowe systemy rozpoznawania}
+\courseyear{2021/2022}
+
+\courseteacher{Prof. dr hab. inż. Adam Niewiadomski}
+\coursegroup{Poniedziałek, 13:45}
+
+\author{
+  \studentinfo{Krzysztof Dwużnik}{229870} \and
+  \studentinfo{Wojciech Majchrzak}{229947}}
+
+\title{Projekt 2.  Podsumowania lingwistyczne relacyjnych baz danych}
+
+\begin{document}
+\maketitle
+
+\section{Cel}
+
+Celem projektu jest zaprojektowanie i stworzenie aplikacji, której celem jest generowanie podsumowań lingwistycznych \cite{niewiadomski08} postaci:
+    \[Q \mbox{ które są } W_1, W_2 ... W_n \mbox{ jest } S_1, S_2 ... S_n.\]
+gdzie: $Q$ - kwantyfikator ilościowy względny lub absolutny, $W_1, W_2 ... W_n$ - zbiór n kwalifikatorów lingwistycznych, $S_1, S_2 ... S_N$ - zbiór n sumaryzatorów lingwistycznych.\\
+
+Podsumowania będą generowane dla wybranej bazy opisującej domy w Australii (patrz rozdział 2.1) \cite{kaggle}\cite{kaggle:baza}.W zadaniu będziemy korzystać z 13 kolumn, z czego 11 będziemy rozmywać. Zadaniem aplikacji będzie, na podstawie wyborów użytkownika, przedstawienie wyników w postaci opisów, czyli inaczej podsumowań lingwistycznych. Tak wygenerowane podsumowania mogą się przydać przy poszukiwaniach domu w Australii.\\
+
+Przykładowo jako wynik możemy otrzymać:\\
+\textbf{Prawie żaden z domów jest tani, przestrzenny, i nowy.}
+
+\section{Baza danych, zmienne lingwistyczne, kwantyfikatory lingwistyczne}
+
+\subsection{Charakterystyka podsumowywanej bazy danych}
+
+Do analizy danych przez naszą aplikację wybraliśmy bazę perth-house-prices~\cite{kaggle:baza} ze strony Kaggle \cite{kaggle}. Baza opiera się na danych mieszkań znajdujących się w Australii. Baza zawiera 19208 unikalnych rekordów oraz 14 kolumn z czego 12 to kolumny liczbowe, a 2 to kolumny tekstowe. Atrybuty które będziemy rozmywać to:
+\begin{enumerate}
+	\item PRICE (Cena) - wartości z przedziału [52000-2440000]
+	\item LAND AREA (Powierzchnia działki) - wartości z przedziału [61-999999]
+	\item FLOOR AREA (Powierzchnia mieszkania) - wartości z przedziału [1-849] 
+	\item BUILD YEAR (Rok wybudowania) - wartości z przedziału [1870-2017]
+	\item CBD DIST (Odległość do centrum miasta) - wartości z przedziału [1300-56900]
+	\item NEAREST STN DIST (Odległość do najbliższej stacji) - wartości z przedziału [46-34300]
+	\item LAST SOLD TIME (Czas od ostatniej sprzedaży [dni]) - wartości z przedziału [528-12369]
+	\item LATITUDE (Wysokość geograficzna) - wartości z przedziału [od -32.455550 do -31.595910]
+    \item LONGITUDE (Szerokość geograficzna) - wartości z przedziału [od 115.675834 do 116.341780]
+    \item NEAREST SCH DIST (Odległość do najbliższej szkoły) wartości z przedziału [0.070912 do 20.720911]
+    \item NEAREST SCH RANK (Ranga najbliższej szkoły) - wartości z przedziału [1-139]
+\end{enumerate}
+Pozostałe wartości to wartości opisowe jednoznacznie identyfikujące dany dom:
+\begin{enumerate}
+    \item ADDRESS (adres domu)
+    \item SUBURB (nazwa dzielnicy w jakiej dany dom się znajduje)
+\end{enumerate}
+Dodatkowo znajduje się też kolumna BEDROOMS określająca ilość sypialni w domu. Posłuży ona nam do podziału na podmioty.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = \textwidth]{Fragment bazy danych.PNG}
+    \caption{Fragment wykorzystanej bazy danych}
+    \label{fig:my_label}
+\end{figure}
+\subsection{Zmienne lingwistyczne (atrybuty/własności obiektów)}
+Weźmy pod uwagę wszystkie 11 atrybutów liczbowych i przekształćmy je na zmienne lingwistyczne. Poniżej przedstawiamy przestrzenie rozważań dla każdej zmiennej, wszystkie wzory analityczne oraz wykresy funkcje przynależności dla każdej zmiennej lingwistycznej.
+
+\begin{enumerate}
+	\item Cena\\
+	Przestrzeń rozważań zmiennej lingwistycznej: 50000 - 2500000 [AUD]
+	\begin{enumerate}
+    	\item Bardzo tani
+    	\begin{equation}
+    	    \mu_{bTani}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [50000, 244200]\\
+                (437400 - x) / 193200 & \mbox{gdy } x \in (244200, 437400)\\
+            \end{cases}
+    	\end{equation}
+	    \item Tani 
+	    \begin{equation}
+    	    \mu_{tani}(x) = \begin{cases}
+    	        (x - 244200) / 193200 & \mbox{gdy } x \in (244200, 437400), \\
+                1                 & \mbox{gdy } x \in [437400, 534000]\\
+                (727200 - x) / 193200 & \mbox{gdy } x \in (534000, 727200)\\
+            \end{cases}
+    	\end{equation}
+	    \item W rozsądnej cenie
+	    \begin{equation}
+    	    \mu_{rozCena}(x) = \begin{cases}
+    	        (x - 534000) / 193200 & \mbox{gdy } x \in (534000, 727200), \\
+                1                 & \mbox{gdy } x \in [727200, 823800]\\
+                (1017000 - x) / 193200 & \mbox{gdy } x \in (823800, 1017000)\\
+            \end{cases}
+    	\end{equation}
+	    \item Drogi
+	    \begin{equation}
+    	    \mu_{drogi}(x) = \begin{cases}
+    	        (x - 823800) / 193200 & \mbox{gdy } x \in (823800, 1017000), \\
+                1                 & \mbox{gdy } x \in [1017000, 1113600]\\
+                (1306800 - x) / 193200 & \mbox{gdy } x \in (1113600, 1306800)\\
+            \end{cases}
+    	\end{equation}
+	    \item Bardzo drogi
+	    \begin{equation}
+    	    \mu_{bDrogi}(x) = \begin{cases}
+    	        (x - 1113600) / 193200 & \mbox{gdy } x \in (1113600, 1306800), \\
+                1                 & \mbox{gdy } x \in [1306800, 2500000]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{"wykresy_zmienne_lingw/cena.png"}
+    	\caption{Zmienna lingwistyczna cena}
+    \end{figure}
+
+    \item Powierzchnia działki\\
+    Przestrzeń rozważań zmiennej lingwistycznej: 50 - 1100000 [{m$^2$}]
+    
+    \begin{enumerate}
+	    \item Bardzo mała
+	    \begin{equation}
+    	    \mu_{bMala}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [50, 5050]\\
+                (10050 - x) / 5000 & \mbox{gdy } x \in (5050, 10050)\\
+            \end{cases}
+    	\end{equation}
+    	\item Mała
+    	\begin{equation}
+    	    \mu_{mala}(x) = \begin{cases}
+    	        (x - 5050) / 5000 & \mbox{gdy } x \in (5050, 10050), \\
+                1                 & \mbox{gdy } x \in [10050, 12550]\\
+                (17550 - x) / 5000 & \mbox{gdy } x \in (12550, 17550)\\
+            \end{cases}
+    	\end{equation}
+	    \item Średnia
+	    \begin{equation}
+    	    \mu_{srednia}(x) = \begin{cases}
+    	        (x - 244200) / 5000 & \mbox{gdy } x \in (12550, 17550), \\
+                1                 & \mbox{gdy } x \in [17550, 20050]\\
+                (25050 - x) / 5000 & \mbox{gdy } x \in (20050, 25050)\\
+            \end{cases}
+    	\end{equation}
+	    \item Duża
+	    \begin{equation}
+    	    \mu_{duza}(x) = \begin{cases}
+    	        (x - 20050) / 5000 & \mbox{gdy } x \in (20050, 25050), \\
+                1                 & \mbox{gdy } x \in [25050, 27550]\\
+                (32550 - x) / 5000 & \mbox{gdy } x \in (27550, 32550)\\
+            \end{cases}
+    	\end{equation}
+	    \item Bardzo duża
+	    \begin{equation}
+    	    \mu_{bDuza}(x) = \begin{cases}
+    	        (x - 27550) / 5000 & \mbox{gdy } x \in (27550, 32550), \\
+                1                 & \mbox{gdy } x \in [32550, 35050]\\
+                (40050 - x) / 5000 & \mbox{gdy } x \in (35050, 40050)\\
+            \end{cases}
+    	\end{equation}
+	    \item Ogromna
+	    \begin{equation}
+    	    \mu_{ogromna}(x) = \begin{cases}
+    	        (x - 35050) / 5000 & \mbox{gdy } x \in (35050, 40050), \\
+                1                 & \mbox{gdy } x \in [40050, 1100000]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/Powierzchnia ziemi.png}
+    	\caption{Zmienna lingwistyczna powierzchnia działki}
+    \end{figure}
+    
+    \item Powierzchnia mieszkania\\
+    Przestrzeń rozważań zmiennej lingwistycznej: 1 - 1000 [{m$^2$}]
+    \begin{enumerate}
+	    \item Klaustrofobiczne
+	    \begin{equation}
+    	    \mu_{klaustrofobiczne}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [0, 60]\\
+                (180 - x) / 120 & \mbox{gdy } x \in (60, 180)\\
+            \end{cases}
+    	\end{equation}
+    	\item Przeciętne
+    	\begin{equation}
+    	    \mu_{przecietne}(x) = \begin{cases}
+    	        (x - 60) / 120 & \mbox{gdy } x \in (120, 240), \\
+                1                 & \mbox{gdy } x = 240\\
+                (360 - x) / 120 & \mbox{gdy } x \in (240, 360)\\
+            \end{cases}
+    	\end{equation}
+	    \item Przestrzenne
+	    \begin{equation}
+    	    \mu_{przestrzenne}(x) = \begin{cases}
+    	        (x - 27550) / 120 & \mbox{gdy } x \in (300, 420), \\
+                1                 & \mbox{gdy } x \in [420, 1000]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/Powierzchnia podlogi.png}
+    	\caption{Zmienna lingwistyczna powierzchnia mieszkania}
+    \end{figure}
+    
+    \item Rok wybudowania\\
+    Przestrzeń rozważań zmiennej lingwistycznej: 1850 - 2022
+    \begin{enumerate}
+	    \item Bardzo stary
+	    \begin{equation}
+    	    \mu_{bStary}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [1850, 1860]\\
+                (1900 - x) / 40 & \mbox{gdy } x \in (1860, 1900)\\
+            \end{cases}
+    	\end{equation}
+    	\item Stary
+    	\begin{equation}
+    	    \mu_{stary}(x) = \begin{cases}
+    	        (x - 1860) / 40 & \mbox{gdy } x \in (1860, 1900), \\
+                1                 & \mbox{gdy } x = 1900\\
+                (1940 - x) / 40 & \mbox{gdy } x \in (1900, 1940)\\
+            \end{cases}
+    	\end{equation}
+	    \item W średnim wieku
+	    \begin{equation}
+    	    \mu_{sredniWiek}(x) = \begin{cases}
+    	        (x - 1900) / 40 & \mbox{gdy } x \in (1900, 1940), \\
+                1                 & \mbox{gdy } x = 1940\\
+                (1980 - x) / 40 & \mbox{gdy } x \in (1940, 1980)\\
+            \end{cases}
+    	\end{equation}
+	    \item Młody
+	    \begin{equation}
+    	    \mu_{mlody}(x) = \begin{cases}
+    	        (x - 1940) / 40 & \mbox{gdy } x \in (1940, 1980), \\
+                1                 & \mbox{gdy } x = 1980\\
+                (2000 - x) / 40 & \mbox{gdy } x \in (1980, 2020)\\
+            \end{cases}
+    	\end{equation}
+	    \item Nowy
+	    \begin{equation}
+    	    \mu_{nowy}(x) = \begin{cases}
+    	        (x - 1980) / 40 & \mbox{gdy } x \in (1980, 2020), \\
+                1                 & \mbox{gdy } x \in [2020, 2022]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/Rok wybudowania.png}
+    	\caption{Zmienna lingwistyczna rok wybudowania}
+    \end{figure}
+    
+    \item Odległość do centrum\\
+    Przestrzeń rozważań zmiennej lingwistycznej: 500 - 70000 [m]
+    \begin{enumerate}
+	    \item Bardzo blisko centrum
+	    \begin{equation}
+    	    \mu_{bbCentrum}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [500, 5500]\\
+                (15500 - x) / 10000 & \mbox{gdy } x \in (5500, 15500)\\
+            \end{cases}
+    	\end{equation}
+    	\item Nieopodal centrum
+    	\begin{equation}
+    	    \mu_{nCentrum}(x) = \begin{cases}
+    	        (x - 10500) / 10000 & \mbox{gdy } x \in (10500, 20500), \\
+                1                 & \mbox{gdy } x = 20500\\
+                (30500 - x) / 10000 & \mbox{gdy } x \in (20500, 30500)\\
+            \end{cases}
+    	\end{equation}
+	    \item Daleko od centrum
+	    \begin{equation}
+    	    \mu_{dCentrum}(x) = \begin{cases}
+    	        (x - 20500) / 10000 & \mbox{gdy } x \in (20500, 30500), \\
+                1                 & \mbox{gdy } x = 30500\\
+                (40500 - x) / 10000 & \mbox{gdy } x \in (30500, 40500)\\
+            \end{cases}
+    	\end{equation}
+	    \item Bardzo daleko od centrum
+	    \begin{equation}
+    	    \mu_{bdCentrum}(x) = \begin{cases}
+    	        (x - 35500) / 10000 & \mbox{gdy } x \in (35500, 45500), \\
+                1                 & \mbox{gdy }x \in [45500, 70000]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/Odleglosc od centrum.png}
+    	\caption{Zmienna lingwistyczna odległość od centrum}
+    \end{figure}
+    
+    \item Odległość do najbliższej stacji\\
+    Przestrzeń rozważań zmiennej lingwistycznej: 30 - 35000 [m]
+    \begin{enumerate}
+	    \item Bardzo blisko
+	    \begin{equation}
+    	    \mu_{bbStacji}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [30, 4030]\\
+                (8030 - x) / 4000 & \mbox{gdy } x \in (4030, 8030)\\
+            \end{cases}
+    	\end{equation}
+    	\item W pobliżu
+    	\begin{equation}
+    	    \mu_{wPoblizu}(x) = \begin{cases}
+    	        (x - 4030) / 4000 & \mbox{gdy } x \in (4030, 8030), \\
+                1                 & \mbox{gdy } x \in [8030, 10030]\\
+                (14030 - x) / 4000 & \mbox{gdy } x \in (10030, 14030)\\
+            \end{cases}
+    	\end{equation}
+	    \item Daleko
+	    \begin{equation}
+    	    \mu_{dStacji}(x) = \begin{cases}
+    	        (x - 10030) / 4000 & \mbox{gdy } x \in (10030, 14030), \\
+                1                 & \mbox{gdy } x \in [14030, 16030]\\
+                (20030 - x) / 4000 & \mbox{gdy } x \in (16030, 20030)\\
+            \end{cases}
+    	\end{equation}
+	    \item Bardzo daleko
+	    \begin{equation}
+    	    \mu_{bdStacji}(x) = \begin{cases}
+    	        (x - 16030) / 4000 & \mbox{gdy } x \in (16030, 20030), \\
+                1                 & \mbox{gdy } x \in [20030, 35000]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/Odleglosc od najblizszej stacji.png}
+    	\caption{Zmienna lingwistyczna odległość do najbliższej stacji}
+    \end{figure}
+    
+    \item Czas od ostatniej sprzedaży\\
+    Przestrzeń rozważań zmiennej lingwistycznej: 30 - 15000 [dni]
+    \begin{enumerate}
+	    \item Ledwie co
+	    \begin{equation}
+    	    \mu_{ledCo}(x) = \begin{cases}
+    	        1                    & \mbox{gdy } x \in [30, 780], \\
+                \frac{1}{4800\sqrt{2\pi}}^{-\frac{1}{2}\frac{x-780}{4800^2}} & \mbox{gdy } x \in (780, 6480)\\
+            \end{cases}
+    	\end{equation}
+    	\item Ostatnio
+    	\begin{equation}
+    	    \mu_{ostatnio}(x) = \frac{1}{4800\sqrt{2\pi}}^{-\frac{1}{2}\frac{x-4830}{4800^2}} \mbox{ gdy } x \in (30, 10530)\\
+    	\end{equation}
+	    \item Dawno
+	    \begin{equation}
+    	    \mu_{dawno}(x) = \frac{1}{4800\sqrt{2\pi}}^{-\frac{1}{2}\frac{x-9180}{4800^2}} \mbox{ gdy } x \in (3480, 14880)\\
+    	\end{equation}
+	    \item Bardzo dawno
+	    \begin{equation}
+    	    \mu_{bDawno}(x) = \begin{cases}
+    	        \frac{1}{4800\sqrt{2\pi}}^{-\frac{1}{2}\frac{x-12630}{4800^2}} \mbox{ gdy } x \in (6030, 12630)\\
+                1                    & \mbox{gdy } x \in [12630, 15000]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/Czas od ostatniego sprzedania gauss.png}
+    	\caption{Zmienna lingwistyczna czas od ostatniej sprzedaży}
+    \end{figure}
+    
+    \item Wysokość geograficzna\\
+    Przestrzeń rozważań zmiennej lingwistycznej: -32.5 - -31.5 [$^\circ$]
+    \begin{enumerate}
+	    \item Na południu
+	    \begin{equation}
+    	    \mu_{naPoludniu}(x) = \begin{cases}
+    	        1                & \mbox{gdy } x \in [-32.5, -32.4], \\
+                (-32.2 - x) / 0.2 & \mbox{gdy } x \in (-32.4, -32.2)\\
+            \end{cases}
+    	\end{equation}
+    	\item W centrum
+    	\begin{equation}
+    	    \mu_{wCentrumWys}(x) = \begin{cases}
+    	        (x - -32.3) / 0.2 & \mbox{gdy } x \in (-32.3, -32.1), \\
+                1                 & \mbox{gdy } x = -32.1\\
+                (-31.9 - x) / 0.2 & \mbox{gdy } x \in (-32.1, -31.9)\\
+            \end{cases}
+    	\end{equation}
+	    \item Na północy
+	    \begin{equation}
+    	    \mu_{naPolnocy}(x) = \begin{cases}
+    	        (x - -32) / 0.2 & \mbox{gdy } x \in (-32, -31.8),\\
+                1                & \mbox{gdy } x \in [-31.8, -31.5]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/Wysokosc.png}
+    	\caption{Zmienna lingwistyczna wysokość geograficzna}
+    \end{figure}
+    
+    \item Szerokość geograficzna\\
+    Przestrzeń rozważań zmiennej lingwistycznej: 115.6 - 116.4 [$^\circ$]
+    \begin{enumerate}
+	    \item Na wschodzie
+	    \begin{equation}
+    	    \mu_{naWschodzie}(x) = \begin{cases}
+    	        1                & \mbox{gdy } x \in [115.6, 115.7], \\
+                (115.9 - x) / 0.2 & \mbox{gdy } x \in (115.7, 115.9)\\
+            \end{cases}
+    	\end{equation}
+    	\item W centrum
+    	\begin{equation}
+    	    \mu_{wCentrumSzer}(x) = \begin{cases}
+    	        (x - 115.8) / 0.2 & \mbox{gdy } x \in (115.8, 116), \\
+                1                 & \mbox{gdy } x = 116\\
+                (116.2 - x) / 0.2 & \mbox{gdy } x \in (116, 116.2)\\
+            \end{cases}
+    	\end{equation}
+	    \item Na zachodzie
+	    \begin{equation}
+    	    \mu_{naZachodzie}(x) = \begin{cases}
+    	        (x - 116.1) / 0.2 & \mbox{gdy } x \in (116.1, 116.3),\\
+                1                & \mbox{gdy } x \in [116.3, 116.4]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/szerokosc.png}
+    	\caption{Zmienna lingwistyczna szerokość geograficzna}
+    \end{figure}
+    
+    \item Odległość do szkoły\\
+    Przestrzeń rozważań zmiennej lingwistcznej: 0.05 - 25 [km]
+    \begin{enumerate}
+	    \item Bardzo blisko
+	    \begin{equation}
+    	    \mu_{bbSzkoly}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [0.05, 2.05]\\
+                (6.05 - x) / 4 & \mbox{gdy } x \in (2.05, 6.05)\\
+            \end{cases}
+    	\end{equation}
+    	\item W pobliżu
+    	\begin{equation}
+    	    \mu_{wPoblizuSzkoly}(x) = \begin{cases}
+    	        (x - 2.05) / 4 & \mbox{gdy } x \in (2.05, 6.05), \\
+                1                 & \mbox{gdy } x \in [6.05, 8.05]\\
+                (12.05 - x) / 4 & \mbox{gdy } x \in (8.05, 12.05)\\
+            \end{cases}
+    	\end{equation}
+	    \item Daleko
+	    \begin{equation}
+    	    \mu_{dalekoSzkoly}(x) = \begin{cases}
+    	        (x - 8.05) / 4 & \mbox{gdy } x \in (8.05, 12.05), \\
+                1                 & \mbox{gdy } x \in [12.05, 14.05]\\
+                (18.05 - x) / 4 & \mbox{gdy } x \in (14.05, 18.05)\\
+            \end{cases}
+    	\end{equation}
+	    \item Bardzo daleko
+	    \begin{equation}
+    	    \mu_{bdSzkoly}(x) = \begin{cases}
+    	        (x - 14.05) / 4 & \mbox{gdy } x \in (14.05, 18.05), \\
+                1                 & \mbox{gdy } x \in [18.05, 25]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/Odleglosc do najblizszej szkoly.png}
+    	\caption{Zmienna lingwistyczna odległość do szkoły}
+    \end{figure}
+    
+    \item Ranga szkoły\\
+    Przestrzeń rozważań zmiennej lingwistcznej: 1-150
+    \begin{enumerate}
+	    \item Wybitna szkoła
+	    \begin{equation}
+    	    \mu_{wybSzkola}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [1, 11]\\
+                (31 - x) / 20 & \mbox{gdy } x \in (11, 31)\\
+            \end{cases}
+    	\end{equation}
+    	\item Dobra szkoła
+    	\begin{equation}
+    	    \mu_{dSzkola}(x) = \begin{cases}
+    	        (x - 11) / 20 & \mbox{gdy } x \in (11, 31), \\
+                1                 & \mbox{gdy } x \in [31, 41]\\
+                (61 - x) / 20 & \mbox{gdy } x \in (41, 61)\\
+            \end{cases}
+    	\end{equation}
+	    \item Średnia szkoła
+	    \begin{equation}
+    	    \mu_{srSzkola}(x) = \begin{cases}
+    	        (x - 41) / 20 & \mbox{gdy } x \in (41, 61), \\
+                1                 & \mbox{gdy } x \in [61, 71]\\
+                (91 - x) / 20 & \mbox{gdy } x \in (71, 91)\\
+            \end{cases}
+    	\end{equation}
+	    \item Słaba szkoła
+	    \begin{equation}
+    	    \mu_{slabaSzkola}(x) = \begin{cases}
+    	        (x - 71) / 20 & \mbox{gdy } x \in (71, 91), \\
+                1                 & \mbox{gdy } x \in [91, 101]\\
+                (121 - x) / 20 & \mbox{gdy } x \in (101, 121)\\
+            \end{cases}
+    	\end{equation}
+	    \item Bardzo słaba szkoła
+	    \begin{equation}
+    	    \mu_{bslabaSzkola}(x) = \begin{cases}
+    	        (x - 101) / 20 & \mbox{gdy } x \in (101, 121), \\
+                1                 & \mbox{gdy } x \in [121, 150]\\
+            \end{cases}
+    	\end{equation}
+    \end{enumerate}
+    \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=\textwidth]{wykresy_zmienne_lingw/Ranking szkoly.png}
+    	\caption{Zmienna lingwistyczna ranga szkoły}
+    \end{figure}
+    
+\end{enumerate}
+
+\subsection{Kwantyfikatory lingwistyczne (liczności obiektów)}
+W projekcie będziemy korzystać z 5 kwantyfikatorów względnych:
+\begin{enumerate}
+    \item Prawie żaden
+    \begin{equation}
+    	    \mu_{k1}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [0, 768]\\
+                (3073 - x) / 2305 & \mbox{gdy } x \in (768, 3073)\\
+            \end{cases}
+    	\end{equation}
+    \item Trochę
+    \begin{equation}
+    	    \mu_{k2}(x) = \begin{cases}
+    	        (x - 2305) / 768 & \mbox{gdy } x \in (2305, 3073), \\
+                1                 & \mbox{gdy } x \in [3073, 6147]\\
+                (7683 - x) / 1536 & \mbox{gdy } x \in (6147, 7683)\\
+            \end{cases}
+    	\end{equation}
+    \item Około połowy
+    \begin{equation}
+    	    \mu_{k3}(x) = \begin{cases}
+    	        (x - 6147) / 2305 & \mbox{gdy } x \in (6147, 8452), \\
+                1                 & \mbox{gdy } x \in [8452, 10756]\\
+                (13061 - x) / 2305 & \mbox{gdy } x \in (10756, 13061)\\
+            \end{cases}
+    	\end{equation}
+    \item Sporo
+    \begin{equation}
+    	    \mu_{k4}(x) = \begin{cases}
+    	        (x - 11525) / 1536 & \mbox{gdy } x \in (11525, 13061), \\
+                1                 & \mbox{gdy } x \in [13061, 16135]\\
+                (16903 - x) / 768 & \mbox{gdy } x \in (16135, 16903)\\
+            \end{cases}
+    	\end{equation}
+    \item Prawie wszystkie
+    \begin{equation}
+    	    \mu_{k5}(x) = \begin{cases}
+    	        (x - 16135) / 2305 & \mbox{gdy } x \in (16135, 18440), \\
+                1                 & \mbox{gdy } x \in [18440, 19208]\\
+            \end{cases}
+    	\end{equation}
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = \textwidth]{wzgledne.png}
+    \caption{Wykresy funkcji przynależności dla kwalifikatorów względnych}
+    \label{fig:my_label}
+\end{figure}
+
+Będziemy również korzystać z następujących kwantyfikatorów absolutnych:
+\begin{enumerate}
+    \item Mniej niż 3000
+    \begin{equation}
+    	    \mu_{k1}(x) = \begin{cases}
+                1                 & \mbox{gdy } x \in [0, 3600]\\
+                (6200 - x) / 2600 & \mbox{gdy } x \in (3600, 6200)\\
+            \end{cases}
+    	\end{equation}
+    \item Około 7500
+    \begin{equation}
+    	    \mu_{k2}(x) = \begin{cases}
+    	        (x - 4900) / 2600 & \mbox{gdy } x \in (4900, 7500) \\
+                1                 & \mbox{gdy } x = 7500\\
+                (10100 - x) / 2600 & \mbox{gdy } x \in (7500, 10100)\\
+            \end{cases}
+    	\end{equation}
+    \item Blisko 11000
+    \begin{equation}
+    	    \mu_{k3}(x) = \begin{cases}
+    	        (x - 8800) / 2600 & \mbox{gdy } x \in (8800, 11400) \\
+                1                 & \mbox{gdy } x = 11400\\
+                (14000 - x) / 2600 & \mbox{gdy } x \in (11400, 14000)\\
+            \end{cases}
+    	\end{equation}
+    \item Ponad 13000
+    \begin{equation}
+    	    \mu_{k5}(x) = \begin{cases}
+    	        (x - 12700) / 2600 & \mbox{gdy } x \in (12700, 15300), \\
+                1                 & \mbox{gdy } x \in [15300, 19208]\\
+            \end{cases}
+    	\end{equation}
+\end{enumerate}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width = \textwidth]{absolutne.PNG}
+    \caption{Wykresy funkcji przynależności dla kwalifikatorów absolutnych}
+    \label{fig:my_label}
+\end{figure}
+
+
+\section{Narzędzia obliczeniowe: wybór/implementacja. Diagram UML pakietu
+obliczeń rozmytych i~generatora podsumowań. Instrukcja użytkownika}
+
+ \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=1\textwidth]{interfejs1.png}
+    	\caption{Interfejs użytkownika do generowania podsumowań jednopodmiotowych.}
+\end{figure}
+
+ \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=1\textwidth]{interfejs3.png}
+    	\caption{Interfejs użytkownika do generowania podsumowań wielopodmiotowych.}
+\end{figure}
+
+ \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=1\textwidth]{interfejs2.png}
+    	\caption{Interfejs użytkowania do dodawania nowych kwantyfikatorów i sumaryzatorów.}
+\end{figure}
+
+ \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=1\textwidth]{UML1.png}
+    	\caption{Diagram UML części obliczeniowej aplikacji do tworzenia podsumowań lingwistycznych.}
+\end{figure}
+
+ \begin{figure}[H]
+    	\centering
+    	\includegraphics[width=0.8\textwidth]{UML2.png}
+    	\caption{Diagram UML części logicznej modelu aplikacji do tworzenia podsumowań lingwistycznych}
+\end{figure}
+
+
+{\bf Opis diagramu UML}
+\begin{itemize}
+    \item Jedną z głównych klas warstwy logicznej jest klasa FuzzySet definiująca obiekt zbioru rozmytego. Zawiera w sobie obiekt zbioru klasycznego ClassicSet oraz obiekt funkcji przynależności.
+    \item Funkcja przynależności zdefiniowana jest jako interfejs wykorzystujący różne funkcje:
+        \begin{itemize}
+            \item Gaussa
+            \item Trapezowa
+            \item Trójkątna
+            \item Singleton
+            \item Mieszana
+        \end{itemize}
+    \item Klasa ClassicSet wykorzystuje dwie klasy Discreete oraz Crisp do definiowania kolejno przestrzeni rozważań: dyskretnej oraz gęstej.
+    \item Klasa LinguisticVariable definiuje zmienną lingiwstyczną np. "cena". Zawiera ona listę etykiet definiowanych przez klasę Label. Etykietami danej zmiennej lingistycznej np. "cena" są: "bardzo tani", "tani", "w rozsądnej cenie", "drogi", "bardzo drogi".  
+    \item Klasa Quantifier definiuje kwantyfikatory lingiwstyczne. Klasa przechowuje w sobie również obiekt klasy Label. Definiuję on jedno z pięciu słów kluczowych sugerujących liczność obiektów: "prawie żaden", "trochę", "około połowy", "sporo", "prawie wszystkie".
+    \item Klasa Summary to klasa definiująca podsumowania lingwistyczne jednopodmiotowe zawierająca kwantyfikator, listę kwalifikatorów, sumaryzatorów, listę obiektów, oraz miary jakości podsumowań lingiwstycznych. Zawiera ona metody modyfikacji parametrów podsumowań takie jak: addQualifier() czy removeSummarizer()
+    \item Klasa Summary2 to klasa definiująca podsumowania lingwistyczne dwupodmiotowe zawierająca kwantyfikator,2 listy kwalifikatorów, listę sumaryzatorów,2 listy obiektów, oraz miarę jakości podsumowania. Zawiera ona metody modyfikacji parametrów podsumowań takie jak: addQualifier() czy removeSummarizer()
+    \item Wszystkie podsumowania i operacje z nimi związane przechowywane są w obiekcie klasy SummaryRepository, czyli repozytorium na podsumowania.
+    \item Klasa Measures definiuje metody obliczania miar jakości podsumowań lingwistycznych $T_1 - T_{11}$ oraz miarę ogólnej dobroci podsumowania goodnessOfSummary $T$.
+    \item Klasy repozytorium takie jak: SummarizerRepository, LinguisticVariableRepository, SummaryRepository, QuantifierRepository oraz HouseRepository odpowiedzialne są za przechowywanie konkretnych wartości takich jak: kwantyfikatory, podsumowania czy zmienne lingwistyczne
+    \item Klasy serwis: SummarizersService, LinguisticVaribaleService, SummaryService, SummaryService2, QuantifierService oraz HouseService odpowiedzialne są za operacje takie jak: dodawanie, usuwanie, czy pobieranie obiektów trzymanych w repozytorium
+\end{itemize}
+
+
+\pagebreak
+\section{ Jednopodmiotowe podsumowania lingwistyczne. Miary jakości, podsumowanie optymalne}
+
+Przykład podsumowania lingiwstycznego jednopodmiotowego, na podstawie którego opisane są poniższe miary jakości podsumowań lingwistycznych. Jako przykładowe parametry wzięliśmy:
+
+\begin{itemize}
+    \item Kwantyfikator:
+        \begin{itemize}
+            \item Mniej niż ćwierć domów
+        \end{itemize}
+    \item Kwalifikator:
+        \begin{itemize}
+            \item Klaustrofobiczne (Powierzchnia Mieszkania)
+        \end{itemize}
+    \item Sumaryzator:
+        \begin{itemize}
+            \item stary (Rok wybudowania)
+        \end{itemize}
+\end{itemize}
+
+\begin{itemize}
+    \item Mniej niż ćwierć domów które są/mają klaustrofobiczne Powierzchnia mieszkania jest/ma stary rok wybudowania\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.83 & 1.0 & 0.53 & 0.05 & 0.01 & 1.0 & 0.75 & 0.86 & 0.77 & 0.82 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular}
+\end{itemize}
+
+
+Do oceny jakości podsumowań jedno-podmiotowych korzystaliśmy z poszczególnych miar \cite{niewiadomski19}:
+\begin{enumerate}
+    \item $T1$ Degree of truth (Stopień prawdziwości) - określa jak bardzo prawdziwe jest dane podsumowanie lingwistyczne. Na podstawie przykładu powyżej widzimy że podsumowanie jest prawdziwe w stopniu $1$. Wysoka wartość oznacza wysoki stopień prawdziwości naszego podsumowania.
+    \item $T2$ Degree of imprecison (Stopień (nie)precyzyjności) - określa jak bardzo precyzyjne (nieprecyzyjne) jest dane podsumowanie na podstawie sumaryzatorów. Na podstawie przykładu powyżej oznacza to, że podsumowanie na podstawie sumaryzatora "stary" jest precyzyjne w stopniu $0.53$.
+    \item $T3$ Degree of covering (Stopień pokrycia) - określa jak dużo domów (obiektów z bazy danych) pasującymi do kwalifikatora, pasuje do całości podsumowania. Na podstawie przykładu powyżej można stwierdzić że mało obiektów/domów z bazy pokrywa się z kwalifikatorem określającym powierzchnie mieszkania "klaustrofobiczny".
+    \item $T4$ Degree of appropriatness (Stopień adekwatności) - miara zależna od miary $T3$, określa ogólną przydatność danego podsumowania. Na podstawie przykładu powyżej że wynik przydatności podsumowania wynosi $0.01$, wynika to z niskiego pokrycia z miarą $T3$ oraz ich powiązaniem. Oznacza to niski stopień przydatności naszego przykładowego podsumowania.
+    \item $T5$ Length of summary (długość podsumowania) - określa długość podsumowania na podstawie ilości sumaryzatorów. Na podstawie przykładu powyżej widzimy że wynik wynosi $1.0$ ze względu na niską długość podsumowania (wybór jednego sumaryzatora do podsumowania). Wysoka wartość miary oznacza małą długość naszego przykładowego podsumowania.
+    \item $T6$ Degree of quantifier imprecision (Stopień (nie)precyzyjności kwantyfikatora) - Miara analogiczna do miary $T2$, określa (nie)precyzyjność danego podsumowania na podstawie kwantyfikatora. Na podstawie przykładu powyżej widzimy że stopień (nie)precyzyjnośći dla kwantyfikatora "mniej niż ćwierć domów" wynosi $0.75$. Oznacza to, że nasze podsumowanie ze względu na wybrany kwantyfikator jest precyzyjne w stopniu $0.75$.
+    \item $T7$ Degree of quantifier cardinality (Stopień kardynalności kwantyfikatora) - opiera się na liczbie kardynalnej kwantyfikatora. Reprezentuje jakość kwantyfikatora w podsumowaniu. Na podstawie przykładu powyżej widzimy że jakość wybranego kwantyfikatora w przykładowym podsumowaniu określona jest wartością $0.86$. Ze względu na dość wysoki wyniki miary $T7$ w naszym przykładowym podsumowaniu oznacza to, że wybrany kwantyfikator jest dobrej jakości.
+    \item $T8$ Degree of summarizer cardinality (Stopień kardynalności sumaryzatora) - Określa precyzyjność podsumowania na podstawie kardynalności sumaryzatorów. Im większa liczba kardynalna sumaryzatora tym gorsza jakość podsumowania. Na podstawie przykładu powyżej widzimy że jakość podsumowania określona na podstawie wybranego sumaryzatora "stary" wynosi $0.77$. Oznacza to w naszym przykładowym podsumowania wysoką jakość wybranego sumaryzatora ze względu na wysoką wartość miary $T8$.
+    \item $T9$ Degree of qualifier imprecision (Stopień (nie)precyzyjności kwalifikatora) - Miara analogiczna do miary $T2$, określa (nie)precyzyjność danego podsumowania na podstawie kwalifikatorów. Na podstawie przykładu powyżej widzimy że stopień (nie)precyzyjności podsumowania na podstawie kwalifkatora "klaustrofobiczny" określona jest wartością $0.82$. Oznacza to wysoką precyzję wybranego kwalifikatora w naszym przykładowym podsumowaniu.
+    \item $T10$ Degree of qualifier cardinality (Stopień kardynalności kwalifikatora) - analogicznie do miary $T8$, określa precyzyjność podsumowania na podstawie kardynalności kwalifikatorów. Im większa liczba kardynalna kwalifikatora tym gorsza jakość podsumowania. Na podstawie przykładu powyżej widzimy że stopień kardynalności kwalifikatora wynosi $0.88$. Oznacza to, że w przykładowym podsumowaniu można wywnioskować o dobrej jakości podsumowania pod kątem wybranego kwalifikatora.
+    \item $T11$ Length of a qualifier (Długość kwalifikatora) - analogicznie do miary $T5$ określa długość podsumowania na podstawie ilości kwalifikatorów. Na podstawie przykładu powyżej widzimy że długość kwalifikatora wynosi $1.0$. Oznacza to niską długość przykładowego podsumowania, ze względu na wybór tylko jednego kwalifikatora.
+    \item $T$ Ogólna dobroć podsumowania - jest to średnia ważona z wszystkich wymienionych powyżej miar.
+\end{enumerate}
+Jako najlepsze podsumowania uważamy te które mają największą wartość miary $T$ czyli ogólnej dobroci podsumowania.\\
+
+\pagebreak
+
+Jeżeli chodzi o reprezentacje wyników podsumowań lingwistycznych jednopodmiotowych to zastosowaliśmy podsumowania z kwalifikatorem oraz bez. Wyniki podsumowań generowane są dla różnych kwantyfikatorów względnych. Jeżeli chodzi o kwantfikatory absolutne to w podsumowaniu brane pod uwagę są jedynie sumaryzatory.\\
+
+Dane wejściowe dla przykładowego wyniku poniżej
+\begin{itemize}
+    \item Kwantyfikator:
+    \begin{itemize}
+        \item Mniej niż połowa
+    \end{itemize}
+    \item Kwalifikator:
+    \begin{itemize}
+        \item tani (Cena)
+    \end{itemize}
+    \item Sumaryzator:
+    \begin{itemize}
+        \item średnia (Powierzchnia działki)\\
+    \end{itemize}
+\end{itemize}
+
+Jako wynik z powyższymi danymi wygenerowały nam się dwa podsumowania. Jedno z sumaryzatorem oraz uwzględnieniem kwalifikatora:
+\begin{itemize}
+    \item Mniej niż ćwierć domów które są/mają \textbf{średnią} powierzchnie działki jest/ma \textbf{tani} cena\\
+\end{itemize}
+
+Drugim wynikiem było podsumowanie jednopodmiotowe uwzględniające jedynie sumaryzator 
+\begin{itemize}
+    \item Mniej niż ćwierć domów jest/ma \textbf{tani} cena\\
+\end{itemize}
+
+Poniżej kilka przykładowych podsumowań przy stałym kwalifikatorze - "tani" (Cena) oraz sumaryzatorze - "średna" (Powierzchnia działki) dla różnych kwantyfikatorów:
+\begin{enumerate}
+    \item $S_1$ - "\textbf{Mniej niż ćwierć domów} jest/ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.73 & 1.0 & 0.99 & 0.03 & 0.0 & 1.0 & 0.75 & 0.86 & 0.99 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_2$ - "\textbf{Mniej niż ćwierć domów} które są/mają tani cena jest/ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.87 & 1.0 & 0.99 & 0.02 & 0.01 & 1.0 & 0.75 & 0.86 & 0.99 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_3$ - "\textbf{Mniej niż połowa domów} jest/ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.22 & 0.0 & 0.99 & 0.03 & 0.0 & 1.0 & 0.62 & 0.75 & 0.99 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_4$ - "\textbf{Mniej niż połowa domów} które są/mają niska cena jest/ma bardzo średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.35 & 0.0 & 0.99 & 0.02 & 0.01 & 1.0 & 0.62 & 0.75 & 0.99 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_5$ - "\textbf{Około połowy domów} jest/ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.22 & 0.0 & 0.99 & 0.03 & 0.0 & 1.0 & 0.64 & 0.76 & 0.99 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular} 
+    \pagebreak
+    
+    \item $S_6$ - "\textbf{Około połowy domów} które są/mają tani cena jest/ma w średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.35 & 0.0 & 0.99 & 0.02 & 0.01 & 1.0 & 0.64 & 0.76 & 0.99 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_7$ - "\textbf{Większość domów} jest/ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.23 & 0.0 & 0.99 & 0.3 & 0.0 & 1.0 & 0.72 & 0.78 & 0.99 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_8$ - "\textbf{Większość domów} które/są mają tani cena jest/ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.36 & 0.0 & 0.99 & 0.02 & 0.01 & 1.0 & 0.72 & 0.78 & 0.99 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_9$ - "\textbf{Prawie każdy z domów} jest/ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.24 & 0.0 & 0.99 & 0.03 & 0.0 & 1.0 & 0.84 & 0.88 & 0.99 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_{10}$ - "\textbf{Prawie każdy z domów} które są/mają tani cena jest/ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.37 & 0.0 & 0.99 & 0.02 & 0.01 & 1.0 & 0.84 & 0.88 & 0.99 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{11}$ - "\textbf{Mniej niż 3000 domów} jest ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.72 & 1.0 & 0.99 & 0.03 & 0.0 & 1.0 & 0.68 & 0.74 & 0.99 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{12}$ - "\textbf{Około 7500 domów} jest ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.23 & 0.0 & 0.99 & 0.03 & 0.0 & 1.0 & 0.73 & 0.86 & 0.99 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{13}$ - "\textbf{Blisko 11000 domów} jest ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.23 & 0.0 & 0.99 & 0.03 & 0.0 & 1.0 & 0.73 & 0.86 & 0.99 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{14}$ - "\textbf{Ponad 13000 domów} jest ma średnia powierzchnia działki"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.22 & 0.0 & 0.99 & 0.03 & 0.0 & 1.0 & 0.66 & 0.73 & 0.99 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular}
+    \pagebreak
+\end{enumerate}
+
+Poniżej przedstawiona jest lista przykładowych podsumowań lingwistycznych jednopodmiotowych dla stałego kwantyfikatora "Mniej niż połowa domów", sumaryzatora "młody" (Rok wybudowania) oraz zmiennym kwalifikatorze dla zmiennej lingwistycznej cena.\\
+\begin{enumerate}
+    \item $S_{15}$ (Bez kwalifikatora) - "Mniej niż połowa domów jest/ma młody rok wybudowania"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.23 & 0.0 & 0.53 & 0.95 & 0.0 & 1.0 & 0.62 & 0.75 & 0.77 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_{16}$ - "Mniej niż połowa domów które/są maja \textbf{bardzo tani} cena jest/ma młody rok wybudowania"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.37 & 0.0 & 0.53 & 0.99 & 0.04 & 1.0 & 0.62 & 0.75 & 0.77 & 0.84 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{17}$ - "Mniej niż połowa domów które/są maja \textbf{tani} cena jest/ma młody rok wybudowania"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.37 & 0.0 & 0.53 & 0.98 & 0.03 & 1.0 & 0.62 & 0.75 & 0.77 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_{18}$ - "Mniej niż połowa domów które/są maja \textbf{w rozsądnej cenie} cena jest/ma młody rok wybudowania"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.37 & 0.0 & 0.53 & 0.95 & 0.01 & 1.0 & 0.62 & 0.75 & 0.77 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{19}$ - "Mniej niż połowa domów które/są maja \textbf{drogi} cena jest/ma młody rok wybudowania"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.37 & 0.0 & 0.53 & 0.89 & 0.06 & 1.0 & 0.62 & 0.75 & 0.77 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_{20}$ - "Mniej niż połowa domów które/są maja \textbf{bardzo drogi} cena jest/ma młody rok wybudowania"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.41 & 0.16 & 0.53 & 0.87 & 0.08 & 1.0 & 0.62 & 0.75 & 0.77 & 0.43 & 0.47 & 1.0 \\
+        \hline
+    \end{tabular} \\\\
+    \newline
+\end{enumerate}
+\pagebreak
+
+
+Poniżej przedstawiona jest lista przykładowych podsumowań lingwistycznych jednopodmiotowych dla stałego kwantyfikatora "Mniej niż połowa domów", kwalifikatora "drogi" (Cena) oraz zmiennym sumaryzatorze dla zmiennej lingwistycznej odległość od szkoły.\\
+\begin{enumerate}
+    \item $S_{21}$ - "Mniej niż połowa domów jest/ma \textbf{bardzo blisko} odległość od szkoły"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.25 & 0.0 & 0.76 & 0.98 & 0.0 & 1.0 & 0.62 & 0.75 & 0.84 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_{22}$ - "Mniej niż połowa domów które/są maja drogi cena jest/ma \textbf{bardzo blisko} odległość od szkoły"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.38 & 0.0 & 0.76 & 0.97 & 0.01 & 1.0 & 0.62 & 0.75 & 0.84 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{23}$ - "Mniej niż połowa domów jest/ma \textbf{w pobliżu} odległość od szkoły"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.2 & 0.0 & 0.6 & 0.22 & 0.0 & 1.0 & 0.62 & 0.75 & 0.76 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_{24}$ - "Mniej niż połowa domów które/są maja drogi cena jest/ma \textbf{w pobliżu} odległość od szkoły"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.33 & 0.0 & 0.6 & 0.19 & 0.03 & 1.0 & 0.62 & 0.75 & 0.76 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{25}$ - "Mniej niż połowa domów jest/ma \textbf{daleko} odległość od szkoły"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.19 & 0.0 & 0.6 & 0.01 & 0.0 & 1.0 & 0.62 & 0.75 & 0.76 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular} 
+    \newline
+    \item $S_{26}$ - "Mniej niż połowa domów które/są maja drogi cena jest/ma \textbf{daleko} odległość od szkoły"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.32 & 0.0 & 0.6 & 0.01 & 0.0 & 1.0 & 0.62 & 0.75 & 0.76 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{27}$ - "Mniej niż połowa domów jest/ma \textbf{bardzo daleko} odległość od szkoły"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.18 & 0.0 & 0.56 & 0.0 & 0.0 & 1.0 & 0.62 & 0.75 & 0.64 & 0.0 & 0.0 & 0.0 \\
+        \hline
+    \end{tabular}
+    \newline
+    \item $S_{28}$ - "Mniej niż połowa domów które/są maja drogi cena jest/ma \textbf{bardzo daleko} odległość od szkoły"\\
+    \begin{tabular}{|c|l|c|c|c|c|c|c|c|c|c|c|}
+        \hline 
+        T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 \\
+        \hline
+        0.31 & 0.0 & 0.56 & 0.0 & 0.0 & 1.0 & 0.62 & 0.75 & 0.64 & 0.8 & 0.88 & 1.0 \\
+        \hline
+    \end{tabular}
+    \newline
+\end{enumerate}
+\pagebreak
+
+
+\section{Wielopodmiotowe podsumowania lingwistyczne i~ich miary jakości}
+
+Do oceny jakości podsumowań wielo-podmiotowych korzystaliśmy z miary T~\cite{niewiadomski19} dla podsumowań wielopodmiotowych, przyjmującej wartości z zakresu [0 1]. Miara ta określa stopień prawdziwości podsumowania (jak bardzo jest bliskie prawdzie). Podmioty wykorzystywane w naszych podsumowaniach to:
+\begin{itemize}
+    \item Domy mające więcej niż 3 sypialnie
+    \item Domy mające 3 lub mniej sypialnie\\
+\end{itemize}
+
+Nasza aplikacja implementuje wszystkie 4 formy podsumowań lingwistycznych wielopodmiotowych, których implementacje przeprowadziliśmy na podstawie wzorów zawartych w książce~\cite{niewiadomski19}. Poniżej przedstawione są podsumowania wykorzystujące różne kwantyfikatory względne oraz przykłady podsumowań dla każdej z form oraz wynik miary T dla każdego podsumowania.\\
+
+Formy podsumowań wielopodmiotowych
+\begin{itemize}
+    \item Pierwsza forma - nie zawiera kwalifikatora w podsumowaniu.
+    \item Druga forma - podsumowanie uwzględnia kwalifikator który dotyczy drugiego podmiotu w zdaniu.
+    \item Trzecia forma - podsumowanie uwzględnia kwalifikator, który dotyczy pierwszego podmiotu w zdaniu.
+    \item Czwarta forma - forma uwzględniająca hierarchie ilościowa pomiędzy dwoma podmiotami na podstawie słowa kluczowego "Więcej".\\
+\end{itemize}
+
+
+\textbf{Pierwsza forma}\\
+Przykładowe podsumowania wielopodmiotowe dla pierwszej formy bez kwalifikatora dla różnych kwantyfikatorów względnych.
+
+\begin{enumerate}
+    \item $S_{29}$ - "\textbf{Mniej niż ćwierć domów} mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma na południu wysokość geograficzna" [0.0]
+    \item $S_{30}$ - "\textbf{Mniej niż ćwierć domów} mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma na południu wysokość geograficzna" [0.0]
+    \item $S_{31}$ - "\textbf{Mniej niż połowa domów} mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma na południu wysokość geograficzna" [0.44]
+    \item $S_{32}$ - "\textbf{Mniej niż połowa domów} mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma na południu wysokość geograficzna" [0.0]
+    \item $S_{33}$ - "\textbf{Około połowy domów} mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma na południu wysokość geograficzna" [0.85]
+    \item $S_{34}$ - "\textbf{Około połowy domów}  mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma na południu wysokość geograficzna" [0.85]
+    \item $S_{35}$ - "\textbf{Większość domów}  mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma na południu wysokość geograficzna" [0.0]
+    \item $S_{36}$ - \textbf{Większość domów} mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma na południu wysokość geograficzna" [0.0]
+\end{enumerate}
+
+
+Przykładowe podsumowania wielopodmiotowe dla stałego kwantyfikatora "Około połowy domów" przy zmiennym sumaryzatorze dla zmiennej lingwistycznej wysokość geograficzna. 
+
+\begin{enumerate}
+    \item $S_{37}$ - "Około połowy domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{na południu} wysokość geograficzna" [0.85]
+    \item $S_{38}$ - "Około połowy domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{na południu} wysokość geograficzna" [0.85]
+    \item $S_{39}$ - "Około połowy domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{w centrum} wysokość geograficzna" [1.0]
+    \item $S_{40}$ - "Około połowy domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{w centrum} wysokość geograficzna" [1.0]
+    \item $S_{41}$ - "Około połowy domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{na północy} wysokość geograficzna" [1.0]
+    \item $S_{42}$ - "Około połowy domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{na północy} wysokość geograficzna" [1.0]\\
+\end{enumerate}
+
+
+\textbf{Druga forma}\\
+Przykładowe podsumowania wielopodmiotowe dla drugiej formy przy stałym kwantyfikatorze "Większość domów", sumaryzatorze "tani" dla zmiennej cena oraz zmiennym kwalifikatorze dla zmiennej lingwistycznej powierzchnia mieszkania.
+
+\begin{enumerate}
+    \item $S_{43}$ - "Większość domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają \textbf{klaustrofobiczne} powierzchnia mieszkania jest/ma tani cena" [0.0]
+    \item $S_{44}$ - "Większość domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają \textbf{klaustrofobiczne} powierzchnia mieszkania jest/ma tani cena" [0.25]
+    \item $S_{45}$ - "Większość domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają \textbf{przeciętne} powierzchnia mieszkania jest/ma tani cena" [0.63]
+    \item $S_{46}$ - "Większość domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają \textbf{przeciętne} powierzchnia mieszkania jest/ma tani cena" [1.0]
+    \item $S_{47}$ - "Większość domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają \textbf{przestrzenne} powierzchnia mieszkania jest/ma tani cena" [0.0]
+    \item $S_{48}$ - "Większość domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają \textbf{przestrzenne} powierzchnia mieszkania jest/ma tani cena" [0.0]\\
+\end{enumerate}
+
+Przykładowe podsumowania wielopodmiotowe dla drugiej formy przy zmiennym kwantyfikatorze dla stałego kwalifikatora "drogi" dla zmiennej cena oraz sumaryzatora "bardzo mała" dla zmiennej powierzchnia działki. 
+
+\begin{enumerate}
+    \item $S_{49}$ - "\textbf{Mniej niż ćwierć domów} mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{50}$ - "\textbf{Mniej niż ćwierć domów} mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{51}$ - "\textbf{Mniej niż połowa domów} mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{52}$ - "\textbf{Mniej niż połowa domów} mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{53}$ - "\textbf{Około połowy domów} mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{54}$ - "\textbf{Około połowy domów} mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{55}$ - "\textbf{Większość domów} mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{56}$ - "\textbf{Większość domów} mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{57}$ - "\textbf{Prawie każdy z domów} mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [0.86]
+    \item $S_{58}$ - "\textbf{Prawie każdy z domów} mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają drogi cena jest/ma bardzo mała powierzchnia działki" [1.0]
+\end{enumerate}
+
+Przykładowe podsumowania wielopodmiotowe dla drugiej formy przy stałym kwantyfikatorze "Około połowy domów", kwalifikatorze "drogi" zmiennej cena oraz zmiennym sumaryzatorze zmiennej powierzchnia mieszkania.
+
+\begin{enumerate}
+    \item $S_{59}$ - "Około połowy domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają drogi cena jest/ma \textbf{klaustrofobiczne} powierzchnia mieszkania" [0.0]
+    \item $S_{60}$ - "Około połowy domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają drogi cena jest/ma \textbf{klaustrofobiczne} powierzchnia mieszkania" [0.0]
+    \item $S_{61}$ - "Około połowy domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają drogi cena jest/ma \textbf{przeciętne} powierzchnia mieszkania" [0.0]
+    \item $S_{62}$ - "Około połowy domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają drogi cena jest/ma \textbf{przeciętne} powierzchnia mieszkania" [0.0]
+    \item $S_{63}$ - "Około połowy domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie które są/mają drogi cena jest/ma \textbf{przestrzenne} powierzchnia mieszkania" [0.59]
+    \item $S_{64}$ - "Około połowy domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie które są/mają drogi cena jest/ma \textbf{przestrzenne} powierzchnia mieszkania" [0.0]\\
+\end{enumerate}
+
+
+\textbf{Trzecia forma}\\
+Przykładowe podsumowania wielopodmiotowe dla trzeciej formy przy stałym kwantyfikatorze "Większość domów", sumaryzatorze "tani" dla zmiennej cena oraz zmiennym kwalifikatorze dla zmiennej lingwistycznej powierzchnia mieszkania. Analogiczne do zestawu przykładów dla drugiej formy lecz teraz związanych z pierwszym podmiotem.
+
+\begin{enumerate}
+    \item $S_{65}$ - "Większość domów mających 3 lub mniej sypialnie które są/mają \textbf{klaustrofobiczne} powierzchnia mieszkania w porównaniu do tych mających więcej niż 3 sypialnie jest/ma tani cena" [0.0]
+    \item $S_{66}$ - "Większość domów mających więcej niż 3 sypialnie które są/mają \textbf{klaustrofobiczne} powierzchnia mieszkania w porównaniu do tych mających 3 lub mniej sypialnie jest/ma tani cena" [0.0]
+    \item $S_{67}$ - "Większość domów mających 3 lub mniej sypialnie które są/mają \textbf{przeciętne} powierzchnia mieszkania w porównaniu do tych mających więcej niż 3 sypialnie jest/ma tani cena" [0.0]
+    \item $S_{68}$ - "Większość domów mających więcej niż 3 sypialnie które są/mają \textbf{przeciętne} powierzchnia mieszkania w porównaniu do tych mających 3 lub mniej sypialnie jest/ma tani cena" [0.0]
+    \item $S_{69}$ - "Większość domów mających 3 lub mniej sypialnie które są/mają \textbf{przestrzenne} powierzchnia mieszkania w porównaniu do tych mających więcej niż 3 sypialnie jest/ma tani cena" [0.0]
+    \item $S_{70}$ - "Większość domów mających więcej niż 3 sypialnie które są/mają \textbf{przestrzenne} powierzchnia mieszkania w porównaniu do tych mających 3 lub mniej sypialnie jest/ma tani cena" [0.0]\\
+\end{enumerate}
+
+Przykładowe podsumowania wielopodmiotowe dla trzeciej formy przy zmiennym kwantyfikatorze dla stałego kwalifikatora "drogi" dla zmiennej cena oraz sumaryzatora "bardzo mała" dla zmiennej powierzchnia działki. 
+
+\begin{enumerate}
+    \item $S_{71}$ - "\textbf{Mniej niż ćwierć domów} mających 3 lub mniej sypialnie które są/mają drogi cena w porównaniu do tych mających więcej niż 3 sypialnie jest/ma bardzo mała powierzchnia działki" [0.84]
+    \item $S_{72}$ - "\textbf{Mniej niż ćwierć domów} mających więcej niż 3 sypialnie które są/mają drogi cena w porównaniu do tych mających 3 lub mniej sypialnie jest/ma bardzo mała powierzchnia działki" [0.76]
+    \item $S_{73}$ - "\textbf{Mniej niż połowa domów} mających 3 lub mniej sypialnie które są/mają drogi cena w porównaniu do tych mających więcej niż 3 sypialnie jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{74}$ - "\textbf{Mniej niż połowa domów} mających więcej niż 3 sypialnie które są/mają drogi cena w porównaniu do tych mających 3 lub mniej sypialnie jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{75}$ - "\textbf{Około połowy domów} mających 3 lub mniej sypialnie które są/mają drogi cena w porównaniu do tych mających więcej niż 3 sypialnie jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{76}$ - "\textbf{Około połowy domów} mających więcej niż 3 sypialnie które są/mają drogi cena w porównaniu do tych mających 3 lub mniej sypialnie jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{77}$ - "\textbf{Większość domów} mających 3 lub mniej sypialnie które są/mają drogi cena w porównaniu do tych mających więcej niż 3 sypialnie jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{78}$ - "\textbf{Większość domów} mających więcej niż 3 sypialnie które są/mają drogi cena w porównaniu do tych mających 3 lub mniej sypialnie jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{79}$ - "\textbf{Prawie każdy z domów} mających 3 lub mniej sypialnie które są/mają drogi cena w porównaniu do tych mających więcej niż 3 sypialnie jest/ma bardzo mała powierzchnia działki" [0.0]
+    \item $S_{80}$ - "\textbf{Prawie każdy z domów} mających więcej niż 3 sypialnie które są/mają drogi cena w porównaniu do tych mających 3 lub mniej sypialnie jest/ma bardzo mała powierzchnia działki" [0.0]\\
+\end{enumerate}
+
+Przykładowe podsumowania wielopodmiotowe dla trzeciej formy przy stałym kwantyfikatorze "Około połowy domów", kwalifikatorze "drogi" zmiennej cena oraz zmiennym sumaryzatorze zmiennej powierzchnia mieszkania.
+
+\begin{enumerate}
+    \item $S_{81}$ - "Około połowy domów mających 3 lub mniej sypialnie które są/mają drogi cena w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{klaustrofobiczne} powierzchnia mieszkania" [0.0]
+    \item $S_{82}$ - "Około połowy domów mających więcej niż 3 sypialnie które są/mają drogi cena w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{klaustrofobiczne} powierzchnia mieszkania" [0.0]
+    \item $S_{83}$ - "Około połowy domów mających 3 lub mniej sypialnie które są/mają drogi cena w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{przeciętne} powierzchnia mieszkania" [0.0]
+    \item $S_{84}$ - "Około połowy domów mających więcej niż 3 sypialnie które są/mają drogi cena w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{przeciętne} powierzchnia mieszkania" [0.0]
+    \item $S_{85}$ - "Około połowy domów mających 3 lub mniej sypialnie które są/mają drogi cena w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{przestrzenne} powierzchnia mieszkania" [0.0]
+    \item $S_{86}$ - "Około połowy domów mających więcej niż 3 sypialnie które są/mają drogi cena w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{przestrzenne} powierzchnia mieszkania" [0.59]\\
+\end{enumerate}
+
+\textbf{Czwarta forma}\\
+Przykładowe podsumowania wielopodmiotowe dla czwartej formy przy zmiennym sumaryzatorze dla zmiennej odległość od szkoły.
+
+\begin{enumerate}
+    \item $S_{87}$ - "Większość domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{bardzo blisko} odległość do szkoły" [0.56]
+    \item $S_{88}$ - "Większość domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{bardzo blisko} odległość do szkoły" [0.37]
+    \item $S_{89}$ - "Większość domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{w pobliżu} odległość do szkoły" [0.05]
+    \item $S_{90}$ - "Większość domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{w pobliżu} odległość do szkoły" [0.02]
+    \item $S_{91}$ - "Większość domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{daleko} odległość do szkoły" [0.0]
+    \item $S_{92}$ - "Większość domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{daleko} odległość do szkoły" [0.0]
+    \item $S_{93}$ - "Większość domów mających 3 lub mniej sypialnie w porównaniu do tych mających więcej niż 3 sypialnie jest/ma \textbf{bardzo daleko} odległość do szkoły" [0.0]
+    \item $S_{94}$ - "Większość domów mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej sypialnie jest/ma \textbf{bardzo daleko} odległość do szkoły" [0.0]\\
+\end{enumerate}
+
+\section{Dyskusja, wnioski}
+
+\begin{itemize}
+    \item Wnioski podsumowań jednopodmiotowych (wyniki sekcja $4$):
+    \begin{itemize}
+        \item Podsumowania lingwistyczne z kwalifikatorem mają zazwyczaj lepsza ogólną miarę dobroci podsumowania przez uwzględnienie miar $T_9$, $T_{10}$ oraz $T_{11}$.
+        \item Zmiany kwantyfikatora wskazują nam jedynie wyniki dla poszczególnych przedziałów co do ilości obiektów bazy. Na podstawie przykładów $S_1 - S_{14}$ widzimy że najbliżej prawdy jest to że mniej niż ćwierć domów w naszej bazie które są tanie mają średnią powierzchnie działki.
+        \item Kwantyfikator absolutny "Mniej niż 3000 domów" w podsumowaniu $S_11$, w porównaniu do innych wyróżnia się wysokim stopniem prawdziwości $T_1$ co wskazuje na wysoką trafność naszego przykładu co do ilości obiektów naszej bazy.
+        \item W przykładach $S_{21} - S_{28}$ widzimy pewną zależność między miarą $T_3$ a zmianami związanymi z modyfikacją sumaryzatora. Widzimy że wraz ze wzrostem odległości od szkoły spada miara pokrycia z kwalifikatorem. Oznacza to w naszym przypadku, że drogie domy charakteryzują się mniejszą odległością do szkoły.\\
+    \end{itemize}
+    
+    \item Wnioski podsumowań wielopodmiotowych (wyniki sekcja $5$):
+    \begin{itemize}
+        \item Zmiana kwantyfikatora względnego w pierwszej formie oraz miara wskazuje nam na stopień prawdziwości co do ilości obiektów w bazie. Na przykładach $S_{33}$ oraz $S_{34}$ widzimy że miary $T$ przyjmują największą, jednakową wartość. Oznacza to że prawdziwe jest to, że około połowy domów przyjmujących zależności między podmiotami znajduje się na południu.
+        \item Na podstawie przykładów $S_{37} - S_{42}$ widzimy że kwantyfikator "Około połowy domów" okazał się bardzo trafnym w określaniu wysokości geograficznej w każdym kierunku. Jednak większym stopniem prawdziwości charakteryzuje się centrum oraz północ.
+        \item Na podstawie podsumowań $S_{43} - S_{48}$ oraz modyfikacją kwalifikatora jesteśmy w stanie określić stopień prawdziwości dla danej ilości obiektów bazy. Widzimy, że najbliższe prawdy jest to, że większość domów z bazy mających 3 lub mniej/więcej niż 3 sypialnie w porównaniu do takich mających 3 lub mniej/więcej niż 3 sypialnie i mają przeciętną powierzchnie mieszkania jest tanich.
+        \item Na podstawie przykładów $S_{49} - S_{58}$ widzimy że wysoka cena nie idzie w parze z dużą powierzchnią działki.
+        \item Na podstawie podsumowań $S_{59} - S_{64}$ widzimy że najlepsze dopasowanie ma przykład $S_{63}$. Dysproporcja w przykładzie $S_{64}$ dla tego samego sumaryzatora wynika odwrotnym, w tym przypadku gorszym pokryciem w kwalifikatorem. Z tych przykładów wynika, że bliższe prawdzie jest to że domy mające więcej niż 3 sypialnie zazwyczaj są droższe, a za tym idzie przestrzenna powierzchnia mieszkania.
+        \item W przykładach trzeciej formy $S_{71} - S_{80}$ widzimy odwrotną zależność co do prawdziwości wyników z przykładów drugiej formy $S_{49} - S_{58}$ dla analogicznych parametrów. Wynika to z różnicy, z którym podmiotem związany jest kwalifikator opisujący cenę domu.
+        \item Jeżeli chodzi o czwartą formę to możemy wywnioskować, że najwięcej domów z bazy jest tych które mają bardzo bliską odległość. Natomiast mimo wszystko wśrod tych domów mających bliską odległość jest więcej domów mających 3 lub mniej sypialni w porównaniu do tych mających więcej niż 3 od tych mających więcej niż 3 sypialnie w porównaniu do tych mających 3 lub mniej.
+    \end{itemize}
+\end{itemize}
+
+
+\begin{thebibliography}{99}
+\bibitem{kaggle}Strona internetowa kaggle.com [online] [dostęp 13.05.2022] \url{https://www.kaggle.com}
+\bibitem{kaggle:baza} Baza danych perth-house-prices. [online] [dostęp 13.05.2022]
+\url{https://www.kaggle.com/datasets/syuzai/perth-house-prices}
+
+ \bibitem{niewiadomski19} A. Niewiadomski, Zbiory rozmyte typu 2. Zastosowania w reprezentowaniu informacji.  Seria „Problemy współczesnej informatyki” pod redakcją L. Rutkowskiego. Akademicka Oficyna Wydawnicza EXIT, Warszawa, 2019.
+\bibitem{zadrozny06} S. Zadrożny, Zapytania nieprecyzyjne i lingwistyczne podsumowania baz danych, EXIT, 2006, Warszawa
+\bibitem{niewiadomski08} A. Niewiadomski, Methods for the Linguistic Summarization of Data: Applications of Fuzzy Sets and Their Extensions, Akademicka Oficyna Wydawnicza EXIT, Warszawa, 2008.
+\end{thebibliography}
+
+Literatura zawiera wyłącznie źródła recenzowane i/lub o potwierdzonej wiarygodności,
+możliwe do weryfikacji i cytowane w sprawozdaniu. 
+\end{document}
