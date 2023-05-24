@@ -1,0 +1,73 @@
+{
+  "PRICE": {
+    "function": "Trapezoidal",
+    "variables": {
+      "Very cheap (under 275000)": {
+        "leftDown": 50000,
+        "leftUp": 50000,
+        "rightUp": 172000,
+        "rightDown": 275000
+      },
+      "Cheap (around 327000)": {
+        "leftDown": 172000,
+        "leftUp": 275000,
+        "rightUp": 379000,
+        "rightDown": 483000
+      },
+      "Medium (around 535000)": {
+        "leftDown": 379000,
+        "leftUp": 483000,
+        "rightUp": 587000,
+        "rightDown": 691000
+      },
+      "Expensive (around 743000)": {
+        "leftDown": 587000,
+        "leftUp": 691000,
+        "rightUp": 795000,
+        "rightDown": 899000
+      },
+      "Very expensive (above 899000)": {
+        "leftDown": 795000,
+        "leftUp": 899000,
+        "rightUp": 2500000,
+        "rightDown": 2500000
+      }
+    }
+  },
+  "LAND AREA": {
+    "names": [],
+    "function": ""
+  },
+  "FLOOR AREA": {
+    "names": [],
+    "function": ""
+  },
+  "BUILD YEAR": {
+    "names": [],
+    "function": ""
+  },
+  "CBD DISTANCE": {
+    "names": [],
+    "function": ""
+  },
+  "NEAREST STN DIST": {
+    "names": [],
+    "function": ""
+  },
+  "LAST SOLD TIME": {
+    "names": [],
+    "function": ""
+  },
+  "LATITUDE": {
+    "names": [],
+    "function": ""
+  },
+  "LONGITUDE": {
+    "names": [],
+    "function": ""
+  },
+  "NEAREST SCH DIST": {
+    "names": [],
+    "function": ""
+  }
+}
