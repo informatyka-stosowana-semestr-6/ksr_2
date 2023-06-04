@@ -18,4 +18,9 @@ public class Gausian implements MembershipFunction {
         }
         return membership;
     }
+    public double getSupport(){
+        return this.stdev*2*2;
+
+    }
+
 }

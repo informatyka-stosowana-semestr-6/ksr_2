@@ -24,4 +24,7 @@ public class Triangular implements MembershipFunction{
             return 0;
         }
     }
+    public double getSupport(){
+        return this.right - this.left;
+    }
 }

@@ -27,4 +27,7 @@ public class Trapezoidal implements MembershipFunction{
             return 0;
         }
     }
+    public double getSupport(){
+        return this.rightDown - this.leftDown;
+    }
 }
