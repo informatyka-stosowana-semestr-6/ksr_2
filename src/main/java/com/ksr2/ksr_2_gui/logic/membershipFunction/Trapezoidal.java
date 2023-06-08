@@ -1,4 +1,4 @@
-package ksr2.logic.membershipFunction;
+package com.ksr2.ksr_2_gui.logic.membershipFunction;
 
 
 public class Trapezoidal implements MembershipFunction{
@@ -26,5 +26,8 @@ public class Trapezoidal implements MembershipFunction{
         } else {
             return 0;
         }
+    }
+    public double getSupport(){
+        return this.rightDown - this.leftDown;
     }
 }

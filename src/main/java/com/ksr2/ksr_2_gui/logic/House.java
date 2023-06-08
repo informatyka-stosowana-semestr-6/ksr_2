@@ -1,4 +1,4 @@
-package ksr2.logic;
+package com.ksr2.ksr_2_gui.logic;
 
 public class House {
 }

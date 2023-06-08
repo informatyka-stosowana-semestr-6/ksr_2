@@ -1,6 +1,7 @@
-package ksr2.logic;
+package com.ksr2.ksr_2_gui.logic;
 
-import ksr2.logic.membershipFunction.MembershipFunction;
+
+import com.ksr2.ksr_2_gui.logic.membershipFunction.MembershipFunction;
 
 public class FuzzySet {
     private MembershipFunction membershipFunction;

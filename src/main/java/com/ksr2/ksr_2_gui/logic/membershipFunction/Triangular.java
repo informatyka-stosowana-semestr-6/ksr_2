@@ -1,4 +1,4 @@
-package ksr2.logic.membershipFunction;
+package com.ksr2.ksr_2_gui.logic.membershipFunction;
 
 public class Triangular implements MembershipFunction{
     private final double left;
@@ -23,5 +23,8 @@ public class Triangular implements MembershipFunction{
         } else {
             return 0;
         }
+    }
+    public double getSupport(){
+        return this.right - this.left;
     }
 }

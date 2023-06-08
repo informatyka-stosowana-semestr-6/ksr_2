@@ -1,4 +1,4 @@
-package ksr2.logic.membershipFunction;
+package com.ksr2.ksr_2_gui.logic.membershipFunction;
 
 public class Gausian implements MembershipFunction {
     private final double top;
@@ -17,5 +17,8 @@ public class Gausian implements MembershipFunction {
             membership = 1 / membership;
         }
         return membership;
+    }
+    public double getSupport(){
+        return this.stdev*2*2;
     }
 }
