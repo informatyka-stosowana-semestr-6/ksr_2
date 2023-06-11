@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.function.Function;
 
 public class Measures {
+    // TODO All of functions T1-T11
+
     private double[] weights;
     private double T1degreeOfTruth = 0;
     private double T2degreeOfImprecision = 0;
@@ -25,6 +27,10 @@ public class Measures {
             this::calculateT6, this::calculateT7,
             this::calculateT8, this::calculateT9,
             this::calculateT10, this::calculateT11);
+
+    public Measures(double[] weights) {
+        this.weights = weights;
+    }
 
     private void calculateT1() {
     }
@@ -63,5 +69,49 @@ public class Measures {
         for (Runnable function : this.functions) {
             function.run();
         }
+    }
+
+    public double getT1degreeOfTruth() {
+        return T1degreeOfTruth;
+    }
+
+    public double getT2degreeOfImprecision() {
+        return T2degreeOfImprecision;
+    }
+
+    public double getT3degreeOfCovering() {
+        return T3degreeOfCovering;
+    }
+
+    public double getT4degreeOfAppropriateness() {
+        return T4degreeOfAppropriateness;
+    }
+
+    public double getT5lengthOfSummary() {
+        return T5lengthOfSummary;
+    }
+
+    public double getT6degreeOfQuantifierImprecision() {
+        return T6degreeOfQuantifierImprecision;
+    }
+
+    public double getT7degreeOfQuantifierCardinality() {
+        return T7degreeOfQuantifierCardinality;
+    }
+
+    public double getT8degreeOfSummarizerCardinality() {
+        return T8degreeOfSummarizerCardinality;
+    }
+
+    public double getT9degreeOfQualifierImprecision() {
+        return T9degreeOfQualifierImprecision;
+    }
+
+    public double getT10degreeOfQualifierCardinality() {
+        return T10degreeOfQualifierCardinality;
+    }
+
+    public double getT11lengthOfQualifier() {
+        return T11lengthOfQualifier;
     }
 }

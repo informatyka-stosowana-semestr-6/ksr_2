@@ -7,11 +7,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.ksr2.ksr_2_gui.logic.FuzzySet;
-import com.ksr2.ksr_2_gui.logic.Label;
-import com.ksr2.ksr_2_gui.logic.LinguisticVariable;
+import com.ksr2.ksr_2_gui.logic.*;
 import com.ksr2.ksr_2_gui.logic.membershipFunction.MembershipFunction;
 import com.ksr2.ksr_2_gui.logic.membershipFunction.MembershipFunctionFactory;
+import com.ksr2.ksr_2_gui.logic.membershipFunction.Trapezoidal;
+import com.ksr2.ksr_2_gui.logic.membershipFunction.Triangular;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -58,5 +58,35 @@ public class Initializer {
         }
 
         return linguisticVariables;
+    }
+    public List<Quantifier> createQuantifiers(){
+        List<Quantifier> quantifiers = new ArrayList<>();
+        boolean isRelevant;
+
+        for(int i = 0; i<=1; i++){
+            List<Label> labels = new ArrayList<>();
+            if (i == 0){
+                isRelevant = false;
+                labels.add(new Label("Less than 3000", new FuzzySet(new Triangular(0, 3600, 6200))));
+                labels.add(new Label("Around 7500", new FuzzySet(new Triangular(4900, 7500, 10100))));
+                labels.add(new Label("Close to 11000", new FuzzySet(new Triangular(8800, 11400, 14000))));
+                labels.add(new Label("Over 13000", new FuzzySet(new Triangular(12700, 15300, 33656))));
+            }
+            else {
+                isRelevant = true;
+                labels.add(new Label("Almost none", new FuzzySet(new Trapezoidal(0, 0.05, 0.05, 0.23))));
+                labels.add(new Label("A bit", new FuzzySet(new Trapezoidal(0.12, 0.2, 0.33, 0.47))));
+                labels.add(new Label("About half", new FuzzySet(new Trapezoidal(0.33, 0.42, 0.6, 0.7))));
+                labels.add(new Label("A lot", new FuzzySet(new Trapezoidal(0.6, 0.7, 0.82, 0.87))));
+                labels.add(new Label("Almost all", new FuzzySet(new Trapezoidal(0.82, 0.9, 1, 1))));
+            }
+            quantifiers.add(new Quantifier(isRelevant, labels));
+        }
+        return quantifiers;
+    }
+    public List<House> getAllHouses(){
+        List<House> houses = new ArrayList<>();
+        // TODO read all houses from database
+        return houses;
     }
 }
