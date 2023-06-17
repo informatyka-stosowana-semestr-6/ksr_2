@@ -2,7 +2,7 @@ package com.ksr2.ksr_2_gui.database;
 import java.sql.*;
 
 public class Database {
-    String url = "jdbc:sqlite" + System.getProperty("user.dir") + "data.db";
+    String url = "jdbc:sqlite" + System.getProperty("user.dir") + "houses_data.db";
     Connection connection;
 
     public Database() throws SQLException {
