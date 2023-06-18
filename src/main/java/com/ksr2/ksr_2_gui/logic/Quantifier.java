@@ -22,7 +22,6 @@ public class Quantifier {
     public List<Label> getLabels() {
         return labels;
     }
-    // TODO consider adding getLabel(int index)
 
     public void setLabels(List<Label> labels) {
         this.labels = labels;

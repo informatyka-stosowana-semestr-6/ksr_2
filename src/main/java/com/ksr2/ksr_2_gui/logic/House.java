@@ -53,9 +53,23 @@ public class House {
             return this.price;
         } else if (name.equals("LAND_AREA")) {
             return this.landArea;
-        }
-        // TODO due to summary
-        else {
+        } else if (name.equals("FLOOR_AREA")) {
+            return this.floorArea;
+        } else if (name.equals("BUILD_YEAR")) {
+            return this.buildYear;
+        } else if (name.equals("CBD_DIST")) {
+            return this.cbdDistance;
+        } else if (name.equals("NEAREST_STN_DIST")) {
+            return this.nearestStdDistance;
+        } else if (name.equals("DATE_SOLD")) {
+            return this.lastSoldTime;
+        } else if (name.equals("LATITUDE")) {
+            return this.latitude;
+        } else if (name.equals("LONGITUDE")) {
+            return this.longitude;
+        } else if (name.equals("NEAREST_SCH_DIST")) {
+            return this.neatestSchoolDistance;
+        } else {
             return 0;
         }
     }
