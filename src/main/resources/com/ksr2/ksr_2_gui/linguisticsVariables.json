@@ -1,0 +1,332 @@
+{
+  "PRICE": {
+    "function": "Trapezoidal",
+    "variables": {
+      "Very cheap (under 275000)": {
+        "leftDown": 50000,
+        "leftUp": 50000,
+        "rightUp": 172000,
+        "rightDown": 275000
+      },
+      "Cheap (around 327000)": {
+        "leftDown": 172000,
+        "leftUp": 275000,
+        "rightUp": 379000,
+        "rightDown": 483000
+      },
+      "Medium (around 535000)": {
+        "leftDown": 379000,
+        "leftUp": 483000,
+        "rightUp": 587000,
+        "rightDown": 691000
+      },
+      "Expensive (around 743000)": {
+        "leftDown": 587000,
+        "leftUp": 691000,
+        "rightUp": 795000,
+        "rightDown": 899000
+      },
+      "Very expensive (above 899000)": {
+        "leftDown": 795000,
+        "leftUp": 899000,
+        "rightUp": 2500000,
+        "rightDown": 2500000
+      }
+    }
+  },
+  "LAND AREA": {
+    "function": "Trapezoidal",
+    "variables": {
+      "Tiny area (under 250)":
+      {
+        "leftDown": 50,
+        "leftUp": 50,
+        "rightUp": 250,
+        "rightDown": 400
+      },
+      "Small area (around 550)":
+      {
+        "leftDown": 250,
+        "leftUp": 400,
+        "rightUp": 550,
+        "rightDown": 700
+      },
+      "Average area (around 1500)":
+      {
+        "leftDown": 550,
+        "leftUp": 700,
+        "rightUp": 1500,
+        "rightDown": 2000
+      },
+      "Large area (around 2500)":
+      {
+        "leftDown": 1500,
+        "leftUp": 2000,
+        "rightUp": 2500,
+        "rightDown": 3000
+      },
+      "Gigantic area (above 3000)":
+      {
+        "leftDown": 2500,
+        "leftUp": 3000,
+        "rightUp": 1100000,
+        "rightDown": 1100000
+      }
+    }
+  },
+  "FLOOR AREA": {
+    "function": "Trapezoidal",
+    "variables": {
+      "Claustrophobic (under 50)":
+      {
+        "leftDown": 1,
+        "leftUp": 1,
+        "rightUp": 100,
+        "rightDown": 200
+      },
+      "Average (around 200)":
+      {
+        "leftDown": 100,
+        "leftUp": 200,
+        "rightUp": 300,
+        "rightDown": 400
+      },
+      "Moderate (around 400)":
+      {
+        "leftDown": 300,
+        "leftUp": 400,
+        "rightUp": 500,
+        "rightDown": 600
+      },
+      "Spatial (around 600)":
+      {
+        "leftDown": 500,
+        "leftUp": 600,
+        "rightUp": 700,
+        "rightDown": 800
+      },
+      "Enormous (above 700)":
+      {
+        "leftDown": 700,
+        "leftUp": 800,
+        "rightUp": 1000,
+        "rightDown": 1000
+      }
+    }
+  },
+  "BUILD YEAR": {
+    "function": "Trapezoidal",
+    "variables": {
+      "Aged (before 1890)":
+      {
+        "leftDown": 1850,
+        "leftUp": 1850,
+        "rightUp": 1890,
+        "rightDown": 1910
+      },
+      "Old (before 1920)":
+      {
+        "leftDown": 1890,
+        "leftUp": 1910,
+        "rightUp": 1920,
+        "rightDown": 1940
+      },
+      "Medium age (around 1940)":
+      {
+        "leftDown": 1920,
+        "leftUp": 1940,
+        "rightUp": 1950,
+        "rightDown": 1980
+      },
+      "New (later than 1980)":
+      {
+        "leftDown": 1950,
+        "leftUp": 1980,
+        "rightUp": 2000,
+        "rightDown": 2010
+      },
+      "Recently built (later than 2010)":
+      {
+        "leftDown": 2000,
+        "leftUp": 2010,
+        "rightUp": 2023,
+        "rightDown": 2023
+      }
+    }
+  },
+  "CBD DISTANCE": {
+    "function": "Trapezoidal",
+    "variables": {
+      "Nearby (under 5 minutes)":
+      {
+        "leftDown": 500,
+        "leftUp": 500,
+        "rightUp": 1000,
+        "rightDown": 2000
+      },
+      "Close (around 25 minutes)":
+      {
+        "leftDown": 1000,
+        "leftUp": 2000,
+        "rightUp": 3000,
+        "rightDown": 4000
+      },
+      "Moderate (around 45 minutes)":
+      {
+        "leftDown": 3000,
+        "leftUp": 4000,
+        "rightUp": 6000,
+        "rightDown": 8000
+      },
+      "Far (nearly 2 hours)":
+      {
+        "leftDown": 6000,
+        "leftUp": 8000,
+        "rightUp": 14000,
+        "rightDown": 18000
+      },
+      "Very far (above 2.5 hours)":
+      {
+        "leftDown": 14000,
+        "leftUp": 18000,
+        "rightUp": 70000,
+        "rightDown": 70000
+      }
+    }
+  },
+  "NEAREST STN DIST": {
+    "function": "Trapezoidal",
+    "variables": {
+      "Nearby (around 4 minutes)":
+      {
+        "leftDown": 30,
+        "leftUp": 30,
+        "rightUp": 650,
+        "rightDown": 2000
+      },
+      "Close (around 15 minutes)":
+      {
+        "leftDown": 650,
+        "leftUp": 2000,
+        "rightUp": 3550,
+        "rightDown": 5100
+      },
+      "Moderate (under 1 hour)":
+      {
+        "leftDown": 3550,
+        "leftUp": 5100,
+        "rightUp": 6650,
+        "rightDown": 8200
+      },
+      "Far (above 1.5 hour)":
+      {
+        "leftDown": 6650,
+        "leftUp": 8200,
+        "rightUp": 9750,
+        "rightDown": 11300
+      },
+      "Very far (more than 2 hours)":
+      {
+        "leftDown": 9750,
+        "leftUp": 11300,
+        "rightUp": 37000,
+        "rightDown": 37000
+      }
+    }
+  },
+  "LAST SOLD TIME": {
+    "function": "Gaussian",
+    "variables": {
+      "Recently (less than 1500 days ago)":
+      {
+
+      },
+      "Lately (less than 5000 days ago)":
+      {
+
+      },
+      "Long time ago (more than 8000 days)":
+      {
+
+      },
+      "Very long time ago (more than 10000 days)":
+      {
+
+      }
+    }
+  },
+  "LATITUDE": {
+    "function": "",
+    "variables": {
+      "Southern latitude":
+      {
+
+      },
+      "Central latitude":
+      {
+
+      },
+      "Northern latitude":
+      {
+
+      }
+    }
+  },
+  "LONGITUDE": {
+    "function": "",
+    "variables": {
+      "Western longitude":
+      {
+
+      },
+      "Central longitude":
+      {
+
+      },
+      "Eastern longitude":
+      {
+
+      }
+    }
+  },
+  "NEAREST SCH DIST": {
+    "function": "Trapezoidal",
+    "variables": {
+      "Nearby (less than 5 minutes)":
+      {
+        "leftDown": 0.050,
+        "leftUp": 0.4,
+        "rightUp": 0.8,
+        "rightDown": 0.8
+      },
+      "Close (less than 12 minutes)":
+      {
+        "leftDown": 0.4,
+        "leftUp": 0.8,
+        "rightUp": 1.2,
+        "rightDown": 1.6
+      },
+      "Moderate (around 24 minutes)":
+      {
+        "leftDown": 1.2,
+        "leftUp": 1.6,
+        "rightUp": 2.4,
+        "rightDown": 2.8
+      },
+      "Far (above 35 minutes)":
+      {
+        "leftDown": 2.4,
+        "leftUp": 2.8,
+        "rightUp": 5.0,
+        "rightDown": 7.0
+      },
+      "Very far (above 1.5 hour)":
+      {
+        "leftDown": 5.0,
+        "leftUp": 7.0,
+        "rightUp": 23.50,
+        "rightDown": 23.50
+      }
+    }
+  }
+}
