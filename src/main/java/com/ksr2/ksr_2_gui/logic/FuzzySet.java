@@ -14,6 +14,10 @@ public class FuzzySet {
         return membershipFunction;
     }
 
+    public double getMembership(double x){
+        return this.membershipFunction.getMembership(x);
+    }
+
     public void setMembershipFunction(MembershipFunction membershipFunction) {
         this.membershipFunction = membershipFunction;
     }

@@ -21,29 +21,47 @@ public class Summary {
         this.quantifiers = quantifiers;
     }
 
-    public void createSummaries(List<Label> qualifiers) {  // TODO maybe this should be named summarizers
+    public void createSummaries(List<Label> summarizers) {
 //        private lista domów, potem przeiterować wszystkie i zliczać te które załapują się w kwantyfikator a następnie możemy dodać
 //        te zmienne które wynikają z tych liczb
-        for (Label qualifier : qualifiers) {
-            for (House house : this.houses) {
-                double membership = qualifier.getValue().getMembershipFunction().getMembership(house.getByName(this.getLinguisticVariableName(qualifier.getLabel())));
+        for (House house : this.houses) {
+            double membership = 0;
+            for (Label summarizer : summarizers) {
+                membership += summarizer.getMembership(house.getByName(this.getLinguisticVariableName(summarizer.getLabel())));
+            }
+            membership /= summarizers.size();  // Chyba tak musi być. jeżeli wszystkie zaznaczone kwalifikatory się zgadzają
+            // to dopiero wtedy możemy powiedzieć, że dom się kwalifikuje czy nie
+            if (membership > 0.5) {
                 // TODO adjust this if statement properly
-                if (membership > 0.5) {
-                    this.qualifiedHouses.add(house);
-                    this.numberOfQualifiedHouses++;
-                }
+                this.qualifiedHouses.add(house);
+                this.numberOfQualifiedHouses++;
             }
 
         }
         // TODO i teraz wygenerować summary w zależności od tych membership co wyszło
         for (Quantifier quantifier : this.quantifiers) {
-            // TODO do this statement
+            Label bestQuantifierLabel = quantifier.getLabels().get(0);
             if (quantifier.isRelevant()) {
+                // TODO do this statement
                 String summary = "";
                 this.summaries.add(summary);
             } else {
-                String summary = "";
-                this.summaries.add(summary);
+                for (Label label : quantifier.getLabels()) {
+                    if (label.getMembership(this.numberOfQualifiedHouses) > bestQuantifierLabel.getMembership(this.numberOfQualifiedHouses)) {
+                        bestQuantifierLabel = label;
+                    }
+                }
+                StringBuilder summary = new StringBuilder(bestQuantifierLabel.getLabel() + " houses are ");
+                for (int i = 0; i < summarizers.size(); i++) {
+                    summary.append(summarizers.get(i).getLabel());
+                    if (i + 1 < summarizers.size()){
+                        summary.append(", ");
+                    }
+                    else {
+                        summary.append(".");
+                    }
+                }
+                this.summaries.add(summary.toString());
             }
         }
     }

@@ -15,19 +15,27 @@ public class Main {
         List<Quantifier> quantifiers = initializer.createQuantifiers();
 
         // Getters from GUI
-        List<Label> qualifiers = new ArrayList<>();
+        List<Label> summarizers = new ArrayList<>();
         double[] measuresWeights = new double[0];
         // TODO get qualifiers from gui
+        //////////////////////////////////
+        // DEBUG
+        //////////////////////////////////
+        summarizers.add(linguisticVariables.get(1).getLabels().get(1));
+        //////////////////////////////////
 
 
         // prepare summaries
         Summary summary = new Summary(houses, quantifiers);
-        summary.createSummaries(qualifiers);
+        summary.createSummaries(summarizers);
         Measures measures = new Measures(measuresWeights);
         measures.calculateMeasures();
 
         // Show on gui
         List<String> generatedSummaries = summary.getSummaries();
+        for (String generatedSummary :generatedSummaries) {
+            System.out.println(generatedSummary);
+        }
         // TODO getters for all measures T1-T11
     }
 }

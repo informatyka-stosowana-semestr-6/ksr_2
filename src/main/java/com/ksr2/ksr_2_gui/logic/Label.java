@@ -24,4 +24,8 @@ public class Label {
     public void setValue(FuzzySet value) {
         this.value = value;
     }
+
+    public double getMembership(double x){
+        return this.value.getMembership(x);
+    }
 }
