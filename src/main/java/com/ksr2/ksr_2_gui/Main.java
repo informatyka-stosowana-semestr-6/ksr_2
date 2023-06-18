@@ -2,11 +2,12 @@ package com.ksr2.ksr_2_gui;
 
 import com.ksr2.ksr_2_gui.logic.*;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
         // Initialize
         Initializer initializer = new Initializer();
         List<LinguisticVariable> linguisticVariables = initializer.createLinguisticVariable();

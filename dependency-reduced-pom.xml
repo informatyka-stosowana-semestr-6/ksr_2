@@ -23,7 +23,7 @@
           <execution>
             <id>default-cli</id>
             <configuration>
-              <mainClass>com.ksr2.ksr_2_gui/com.ksr2.ksr_2_gui.HelloApplication</mainClass>
+              <mainClass>com.ksr2.ksr_2_gui/com.ksr2.ksr_2_gui.MainWindow</mainClass>
               <launcher>app</launcher>
               <jlinkZipName>app</jlinkZipName>
               <jlinkImageName>app</jlinkImageName>
@@ -90,6 +90,12 @@
           <groupId>org.apiguardian</groupId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.26</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <properties>

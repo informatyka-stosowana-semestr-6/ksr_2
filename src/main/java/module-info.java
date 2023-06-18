@@ -1,4 +1,4 @@
-module com.ksr2.ksr_2_gui {
+module com.ksr.ksr_2_gui {
     requires javafx.controls;
     requires javafx.fxml;
             
@@ -7,7 +7,7 @@ module com.ksr2.ksr_2_gui {
                 requires org.kordamp.ikonli.javafx;
     requires java.sql;
     requires org.json;
-    requires lombok;
+//    requires lombok;
 
     opens com.ksr2.ksr_2_gui to javafx.fxml;
     exports com.ksr2.ksr_2_gui;
