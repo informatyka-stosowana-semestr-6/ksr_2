@@ -3,6 +3,7 @@ package com.ksr2.ksr_2_gui.logic;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class Summary {
     // Both quantifiers
@@ -93,7 +94,9 @@ public class Summary {
             return "LONGITUDE";
         } else if (nearestSchDistance.contains(name)) {
             return "NEAREST_SCH_DIST";
-        } else return "";
+        } else {
+            throw new NoSuchElementException("There is no LinguisticVariable assigned to name: " + name);
+        }
     }
 
     public List<String> getSummaries() {

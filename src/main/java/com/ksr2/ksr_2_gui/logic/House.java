@@ -1,5 +1,7 @@
 package com.ksr2.ksr_2_gui.logic;
 
+import java.util.NoSuchElementException;
+
 public class House {
     // Keys
     private String address;
@@ -49,29 +51,19 @@ public class House {
     }
 
     public double getByName(String name) {
-        if (name.equals("PRICE")) {
-            return this.price;
-        } else if (name.equals("LAND_AREA")) {
-            return this.landArea;
-        } else if (name.equals("FLOOR_AREA")) {
-            return this.floorArea;
-        } else if (name.equals("BUILD_YEAR")) {
-            return this.buildYear;
-        } else if (name.equals("CBD_DIST")) {
-            return this.cbdDistance;
-        } else if (name.equals("NEAREST_STN_DIST")) {
-            return this.nearestStdDistance;
-        } else if (name.equals("DATE_SOLD")) {
-            return this.lastSoldTime;
-        } else if (name.equals("LATITUDE")) {
-            return this.latitude;
-        } else if (name.equals("LONGITUDE")) {
-            return this.longitude;
-        } else if (name.equals("NEAREST_SCH_DIST")) {
-            return this.neatestSchoolDistance;
-        } else {
-            return 0;
-        }
+        return switch (name) {
+            case "PRICE" -> this.price;
+            case "LAND_AREA" -> this.landArea;
+            case "FLOOR_AREA" -> this.floorArea;
+            case "BUILD_YEAR" -> this.buildYear;
+            case "CBD_DIST" -> this.cbdDistance;
+            case "NEAREST_STN_DIST" -> this.nearestStdDistance;
+            case "DATE_SOLD" -> this.lastSoldTime;
+            case "LATITUDE" -> this.latitude;
+            case "LONGITUDE" -> this.longitude;
+            case "NEAREST_SCH_DIST" -> this.neatestSchoolDistance;
+            default -> throw new NoSuchElementException("There is no name: " + name);
+        };
     }
 
     /////////////////////////////////

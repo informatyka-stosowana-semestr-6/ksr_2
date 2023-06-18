@@ -11,8 +11,6 @@ public class Gausian implements MembershipFunction {
 
     public double getMembership(double x) {
         double membership = Math.pow(Math.E, -0.5 * ((x - this.top) / (this.stdev * this.stdev)));
-
-        // TODO verify if needed
         if (stdev > 1) {
             membership = 1 / membership;
         }
