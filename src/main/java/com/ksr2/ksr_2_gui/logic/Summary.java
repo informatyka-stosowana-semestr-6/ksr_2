@@ -12,7 +12,7 @@ public class Summary {
     // generated summaries
     private List<String> summaries = new ArrayList<>();
     // TODO zmienne które się łapią
-    private List<House> qualifiedHouses = new ArrayList<>();
+    private final List<House> qualifiedHouses = new ArrayList<>();
     private int numberOfQualifiedHouses = 0;
 
 
