@@ -9,7 +9,7 @@ public class MembershipFunctionFactory {
     public static MembershipFunction createObject(String membershipFunctionName, List<Double> variableValues) {
         return switch (membershipFunctionName) {
             case "Trapezoidal" -> new Trapezoidal(variableValues.get(0), variableValues.get(1), variableValues.get(2), variableValues.get(3));
-            case "Gausian" -> new Gausian(variableValues.get(0), variableValues.get(1));
+            case "Gaussian" -> new Gaussian(variableValues.get(0), variableValues.get(1));
             case "Triangular" -> new Triangular(variableValues.get(0), variableValues.get(1), variableValues.get(2));
             default ->  throw new NoSuchElementException("No membership function: " + membershipFunctionName);
         };

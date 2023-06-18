@@ -1,10 +1,10 @@
 package com.ksr2.ksr_2_gui.logic.membershipFunction;
 
-public class Gausian implements MembershipFunction {
+public class Gaussian implements MembershipFunction {
     private final double top;
     private final double stdev;
 
-    public Gausian(double top, double stdev) {
+    public Gaussian(double top, double stdev) {
         this.top = top;
         this.stdev = stdev;
     }

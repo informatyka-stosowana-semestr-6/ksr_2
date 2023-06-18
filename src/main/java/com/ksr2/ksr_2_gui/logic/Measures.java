@@ -8,7 +8,7 @@ import java.util.function.Function;
 public class Measures {
     // TODO All of functions T1-T11
 
-    private double[] weights;
+    private List<Double> weights;
     private List<Summary> summaries;
     private double T1degreeOfTruth = 0;
     private double T2degreeOfImprecision = 0;
@@ -29,12 +29,12 @@ public class Measures {
                                                this::calculateT8, this::calculateT9,
                                                this::calculateT10, this::calculateT11);
 
-    public Measures(double[] weights, List<Summary> summaries) {
+    public Measures(List<Double> weights, List<Summary> summaries) {
         this.weights = weights;
         this.summaries = summaries;
     }
 
-    public Measures(double[] weights) {
+    public Measures(List<Double> weights) {
         this.weights = weights;
     }
 

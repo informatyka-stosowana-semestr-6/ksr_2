@@ -16,7 +16,7 @@ public class Main {
 
         // Getters from GUI
         List<Label> summarizers = new ArrayList<>();
-        double[] measuresWeights = new double[0];
+        List<Double> measuresWeights = new ArrayList<>();
         // TODO get qualifiers from gui
         //////////////////////////////////
         // DEBUG
